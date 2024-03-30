@@ -11,7 +11,10 @@ class VisitPropertiesCest
         $I->loginAsAdmin();
         $I->amOnPluginsPage();
         $I->activatePlugin('ahoy');
+    }
 
+    public function test_it_tracks_page_views(EndToEndTester $I): void
+    {
         $I->amOnPage('/sample-page'); # post ID = 2
         $I->see('Sample Page');
 
