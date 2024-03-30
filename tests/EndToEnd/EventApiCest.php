@@ -22,8 +22,8 @@ class EventApiCest
 
     public function test_it_allows_event_api_with_nonce(EndToEndTester $I): void
     {
-        $I->amOnPage('/sample-page'); # post ID = 2
-        $nonce = $I->grabAttributeFrom('meta[name=ahoy]', 'content');
+        $I->amOnPage('/sample-page');
+        $nonce = $I->grabAttributeFrom('html head meta[name=ahoy]', 'content');
         $I->sendAjaxPostRequest('/wp-json/ahoy/v1/events', array_merge($this->eventData(), ['_wpnonce' => $nonce]));
         $I->seeResponseCodeIs(201); // created
     }

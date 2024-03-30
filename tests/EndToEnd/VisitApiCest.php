@@ -28,8 +28,17 @@ class VisitApiCest
     public function test_it_allows_visit_api_with_nonce(EndToEndTester $I): void
     {
         $I->amOnPage('/sample-page'); # post ID = 2
-        $nonce = $I->grabAttributeFrom('meta[name=ahoy]', 'content');
+        $nonce = $I->grabAttributeFrom('html head meta[name=ahoy]', 'content');
         $I->sendAjaxPostRequest('/wp-json/ahoy/v1/visits', array_merge($this->visitData(), ['_wpnonce' => $nonce]));
         $I->seeResponseCodeIs(201); // created
+    }
+
+    public function test_it_creates_a_visit(EndToEndTester $I): void
+    {
+        $I->amOnPage('/sample-page');
+        $nonce = $I->grabAttributeFrom('html head meta[name=ahoy]', 'content');
+        $I->sendAjaxPostRequest('/wp-json/ahoy/v1/visits', array_merge($this->visitData(), ['_wpnonce' => $nonce]));
+        $I->seeResponseCodeIs(201); // created
+        $I->seeInDatabase('wp_ahoy_visits', ['visit_token' => 'visitId']);
     }
 }
