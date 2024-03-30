@@ -34,17 +34,19 @@ add_action('wp_enqueue_scripts', function () {
 
 class Ahoy_Visit_Controller extends WP_REST_Controller
 {
-    // public function create(WP_REST_Request $request)
-    // {
-    //     $ahoy = Ahoy::track_visit();
-
-    //     $content = json_encode([
-    //         'visit_token' => $ahoy->visit_token,
-    //         'visitor_token' => $ahoy->visitor_token,
-    //     ]);
-
-    //     return new WP_REST_Response($content, 201);
-    // }
+    public function create(WP_REST_Request $request)
+    {
+        global $wpdb;
+        $props = (object) $request->get_params();
+        $result = $wpdb->insert('wp_ahoy_visits', [
+            'visit_token' => $props->visit_token,
+            'visitor_token' => $props->visitor_token,
+            'started_at' => date("Y-m-d H:i:s"),
+        ]);
+        return $result
+            ? new WP_REST_Response(['message' => 'visit created'], 201)
+            : new WP_REST_Response(null, 500);
+    }
 }
 
 class Ahoy_Event_Controller extends WP_REST_Controller
@@ -88,15 +90,8 @@ class Ahoy_Router
 
     public function verifyNonce(WP_REST_Request $request): bool
     {
-        // nonce set in header for initial visit
-        $headerToken = $request->get_header('X-CSRF-Token');
-        $headerValid = wp_verify_nonce($headerToken, 'wp_rest');
-
-        // nonce set in data for events
-        $dataToken = $request->get_param('_wpnonce');
-        $dataValid = wp_verify_nonce($dataToken, 'wp_rest');
-
-        return $headerValid || $dataValid;
+        $token = $request->get_param('_wpnonce');
+        return wp_verify_nonce($token, 'wp_rest');
     }
 }
 
