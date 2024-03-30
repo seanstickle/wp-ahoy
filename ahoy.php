@@ -120,3 +120,8 @@ function ahoy_track_header($post)
     $ahoy->track("page:view", ['postId' => get_queried_object_id()]);
     return $post;
 }
+
+// add meta tag to pages
+add_action('wp_head', function () {
+    echo '<meta name="ahoy" content="' . wp_create_nonce('wp_rest') . '">';
+});
