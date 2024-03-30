@@ -109,3 +109,11 @@ add_action('rest_api_init', function () {
     $router = new Ahoy_Router();
     $router->registerRoutes();
 });
+
+add_filter('the_post', 'ahoy_track_page_view');
+function ahoy_track_page_view($post)
+{
+    $ahoy = new \Ahoy\Tracker();
+    $ahoy->track("page:view", ['postId' => $post->ID]);
+    return $post;
+}
