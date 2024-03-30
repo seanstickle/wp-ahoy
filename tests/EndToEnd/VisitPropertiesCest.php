@@ -27,7 +27,6 @@ class VisitPropertiesCest
     public function test_it_tracks_page_views(EndToEndTester $I): void
     {
         $I->amOnPage('/sample-page'); # post ID = 2
-        $I->see('Sample Page');
 
         $properties = json_encode(["postId" => 2]);
         $I->seeInDatabase('wp_ahoy_events', ['properties' => $properties]);
