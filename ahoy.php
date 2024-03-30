@@ -105,9 +105,18 @@ add_action('rest_api_init', function () {
     $router->registerRoutes();
 });
 
-add_filter('wp_head', 'ahoy_track_page_view');
-function ahoy_track_page_view()
+add_filter('the_post', 'ahoy_track_page_view');
+function ahoy_track_page_view($post)
 {
     $ahoy = new \Ahoy\Tracker();
-    $ahoy->track("page:view", ['postId' => 123]);
+    $ahoy->track("page:view", ['postId' => $post->ID]);
+    return $post;
+}
+
+add_filter('wp_head', 'ahoy_track_header');
+function ahoy_track_header($post)
+{
+    $ahoy = new \Ahoy\Tracker();
+    $ahoy->track("page:view", ['postId' => get_queried_object_id()]);
+    return $post;
 }

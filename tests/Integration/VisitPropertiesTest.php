@@ -28,8 +28,8 @@ class VisitPropertiesTest extends \lucatume\WPBrowser\TestCase\WPTestCase
             $the_query->the_post();
         }
 
-        $last = \Ahoy\Event::last();
-        $this->assertEquals('page:view', $last->name);
-        $this->assertEquals($post->ID, $last->properties->postId);
+        $lastEvent = \Ahoy\Event::last();
+        $this->assertEquals('page:view', $lastEvent?->name);
+        $this->assertEquals($post->ID, $lastEvent?->properties->postId);
     }
 }
