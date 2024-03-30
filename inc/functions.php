@@ -10,7 +10,7 @@ function ahoy_activation(): void
     // visits table
     $table_name = $wpdb->prefix . "ahoy_visits";
     $sql = <<<SQL
-        CREATE TABLE {$table_name} (
+        CREATE TABLE IF NOT EXISTS {$table_name} (
             `id`                BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
             `visit_token`       VARCHAR(255),
             `visitor_token`     VARCHAR(255),
@@ -44,7 +44,7 @@ function ahoy_activation(): void
     // events table
     $table_name = $wpdb->prefix . "ahoy_events";
     $sql = <<<SQL
-        CREATE TABLE {$table_name} (
+        CREATE TABLE IF NOT EXISTS {$table_name} (
             `id`                BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
             `visit_id`          BIGINT,
             `user_id`           BIGINT,

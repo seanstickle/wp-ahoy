@@ -2,6 +2,7 @@
 
 namespace Ahoy;
 
+use Ramsey\Uuid\Uuid;
 use Ahoy\Visit;
 use Ahoy\Event;
 
@@ -71,6 +72,6 @@ class Store
 
     public function generate_id(): string
     {
-        return \Ramsey\Uuid\Uuid::uuid4();
+        return Uuid::uuid4();
     }
 }

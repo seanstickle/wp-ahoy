@@ -10,6 +10,8 @@
  **/
 
 
+require "vendor/autoload.php";
+
 require "lib/ahoy/Event.php";
 require "lib/ahoy/Store.php";
 require "lib/ahoy/Tracker.php";
@@ -17,13 +19,6 @@ require "lib/ahoy/Visit.php";
 require "lib/ahoy/VisitProperties.php";
 
 require 'inc/functions.php';
-
-use Ahoy\Event;
-use Ahoy\Store;
-use Ahoy\Tracker;
-use Ahoy\Visit;
-use Ahoy\VisitProperties;
-
 
 register_activation_hook(__FILE__, 'ahoy_activation');
 register_uninstall_hook(__FILE__, 'ahoy_uninstall');
@@ -110,10 +105,9 @@ add_action('rest_api_init', function () {
     $router->registerRoutes();
 });
 
-add_filter('the_post', 'ahoy_track_page_view');
-function ahoy_track_page_view($post)
+add_filter('wp_head', 'ahoy_track_page_view');
+function ahoy_track_page_view()
 {
     $ahoy = new \Ahoy\Tracker();
-    $ahoy->track("page:view", ['postId' => $post->ID]);
-    return $post;
+    $ahoy->track("page:view", ['postId' => 123]);
 }

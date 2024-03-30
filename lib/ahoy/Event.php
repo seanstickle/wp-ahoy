@@ -31,11 +31,16 @@ class Event
         return $result;
     }
 
-    public static function last(): object
+    public static function last(): object|null
     {
         global $wpdb;
         $tblName = $wpdb->prefix . 'ahoy_events';
         $result = $wpdb->get_row("SELECT * FROM {$tblName} ORDER BY id DESC LIMIT 1");
+
+        file_put_contents('/Users/seanstickle/Desktop/last.txt', print_r($result, true) . PHP_EOL, FILE_APPEND);
+
+        if (!$result) return null;
+
         return (object) [
             'name' => $result->name,
             'properties' => json_decode($result->properties ?? ''),

@@ -8,14 +8,14 @@ class VisitPropertiesCest
 {
     public function test_it_deactivates_activates_correctly(EndToEndTester $I): void
     {
-        $referrer = "http://www.example.com";
+        $I->loginAsAdmin();
+        $I->amOnPluginsPage();
+        $I->activatePlugin('ahoy');
 
-        $I->setHeader("Referer", $referrer);
         $I->amOnPage('/sample-page');
-        $I->seeResponseCodeIs(200);
-        $I->amOnPage('/fake-page');
-        $I->seeResponseCodeIs(404);
+        $I->see('Sample Page');
 
-        $last = \Ahoy\Event::last();
+        $properties = json_encode(["postId" => 123]);
+        $I->seeInDatabase('wp_ahoy_events', ['properties' => $properties]);
     }
 }
