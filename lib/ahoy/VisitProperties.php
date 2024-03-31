@@ -2,20 +2,21 @@
 
 namespace Ahoy;
 
+use DeviceDetector\DeviceDetector;
+
 class VisitProperties
 {
-
     public array $request;
-    public array $params;
-    public string $referrer;
-    public string $landingPage;
+    public ?string $referrer;
+    public ?string $landingPage;
+    public ?string $user_agent;
 
-    public function __construct(array $request, bool $api = false)
+    public function __construct()
     {
-        $this->request = $request;
-        $this->params = $request['params'];
-        $this->referrer = $api ? $this->params['referrer'] : $_SERVER['HTTP_REFERER'];
-        $this->landingPage = $api ? $this->params['landing_page'] : $_SERVER['REQUEST_URI'];
+        $this->request      = $_REQUEST ?? [];
+        $this->referrer     = $_SERVER['HTTP_REFERER'] ?? null;
+        $this->landingPage  = $_SERVER['REQUEST_URI'] ?? null;
+        $this->user_agent   = $_SERVER['HTTP_USER_AGENT'] ?? null;
     }
 
     public function toArray(): array
@@ -28,22 +29,8 @@ class VisitProperties
         );
     }
 
-    /**
-     *
-     * private functions
-     *
-     */
-
     private function getUtmProperties(): array
     {
-        $landingUri = parse_url($this->landingPage);
-
-        $landingParams = [];
-
-        if (isset($landingUri["query"])) {
-            parse_str($landingUri["query"], $landingParams);
-        }
-
         $properties = [];
 
         $utm = [
@@ -55,7 +42,7 @@ class VisitProperties
         ];
 
         foreach ($utm as $key) {
-            $properties[$key] = $this->params[$key] ?? $landingParams[$key] ?? null;
+            $properties[$key] = $this->request[$key] ?? null;
         }
 
         return $properties;
@@ -63,7 +50,7 @@ class VisitProperties
 
     private function getTrafficProperties(): array
     {
-        $uri = parse_url($this->referrer ?? '');
+        $uri = parse_url($this->referrer);
 
         $properties = [
             'referring_domain' => $uri['host'] ?? null
@@ -72,43 +59,37 @@ class VisitProperties
         return $properties;
     }
 
-    // TODO: Implement tech_properties
     private function getTechProperties(): array
     {
+        $dd = new DeviceDetector($this->user_agent);
+        $dd->parse();
+
         $properties = [
-            'browser' => '',
-            'os' => '',
-            'device_type' => ''
+            'browser'       => $dd->getClient('name'),
+            'os'            => $dd->getOs('name'),
+            'device_type'   => $dd->getDeviceName(),
         ];
 
         return $properties;
     }
 
+    // TODO: add optional IP masking for GDPR compliance
     private function getRequestProperties(): array
     {
         $properties = [
-            'ip' => $this->ip(),
-            'user_agent' => $this->ensureUtf8($this->request['user_agent']),
-            'referrer' => $this->referrer,
-            'landing_page' => $this->landingPage,
-            'platform' => $this->params['platform'] ?? null,
-            'app_version' => $this->params['app_version'] ?? null,
-            'os_version' => $this->params['os_version'] ?? null,
-            'screen_height' => $this->params['screen_height'] ?? null,
-            'screen_width' => $this->params['screen_width'] ?? null
+            'ip'            => $_SERVER['REMOTE_ADDR'] ?? null,
+            'user_agent'    => $_SERVER['HTTP_USER_AGENT'] ?? null,
+            'referrer'      => $_SERVER['HTTP_REFERER'] ?? null,
+            'landing_page'  => $_SERVER['REQUEST_URI'] ?? null,
         ];
 
+        $properties['user_agent'] = $this->ensureUtf8($properties['user_agent']);
         return $properties;
     }
 
-    // TODO: Implement optiopnal IP masking
-    private function ip(): string
+    private function ensureUtf8(string|null $string): string|null
     {
-        return $_SERVER['REMOTE_ADDR'];
-    }
-
-    private function ensureUtf8(string $string): string
-    {
+        if (!$string) return null;
         return mb_convert_encoding($string, 'UTF-8', mb_detect_encoding($string));
     }
 }

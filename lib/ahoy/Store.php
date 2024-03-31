@@ -6,41 +6,55 @@ use Ahoy\Ahoy;
 use Ahoy\Event;
 use Ahoy\Visit;
 use Ramsey\Uuid\Uuid;
+use DeviceDetector\DeviceDetector;
 
 class Store
 {
     public ?Visit $visit;
     public bool $server_side_visits = true;
 
-    public ?string $visitToken;
-    public ?string $visitorToken;
+    public ?string $visit_token;
+    public ?string $visitor_token;
+    public string $user_agent;
 
-    public function __construct(string $visitorToken = null, string $visitToken = null)
+    protected $tracker;
+
+    public function __construct(Tracker $tracker, string $visitor_token = null, string $visit_token = null)
     {
+        $this->tracker = $tracker;
         $this->visit = null;
-        $this->visitorToken = $visitorToken;
-        $this->visitToken = $visitToken;
+        $this->visitor_token = $visitor_token;
+        $this->visit_token = $visit_token;
+        $this->user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
     }
 
-    public function track_visit(array $data = []): bool
+    public function trackVisit(array $data = []): bool
     {
         $this->visit = new Visit($data);
         $this->visit->save(); // TODO: handle unique constraint exception
         return true;
     }
 
-    public function visit_or_create(array $data =  []): Visit
+    public function visitOrCreate(int $started_at = null): Visit
     {
         if (!$this->visit && $this->server_side_visits) {
-            $this->track_visit(['started_at' => $data['started_at']]);
+            $this->tracker->trackVisit($started_at);
         }
 
         return $this->getVisit();
     }
 
-    public function track_event(array $data = []): bool
+    // $data = [
+    //     'visit_token'   => $this->getVisitToken(),
+    //     'user_id'       => $this->getUserId(),
+    //     'name'          => $name,
+    //     'properties'    => $properties,
+    //     'time'          => $this->getTrustedTime($options['time'] ?? 0),
+    // ];
+
+    public function trackEvent(array $data = []): bool
     {
-        $visit = $this->visit_or_create(['started_at' => $data['time']]);
+        $visit = $this->visitOrCreate(started_at: $data['time']);
 
         if (!$visit) {
             Ahoy::log("Event excluded since visit not created: {$data['visit_token']}");
@@ -48,8 +62,11 @@ class Store
         }
 
         $event = new Event($data);
-        $event->visit = $visit;
-        $event->time = max($visit->started_at, $event->time);
+        $event->setVisit($visit);
+        $event->setTime(max(
+            $visit->started_at,
+            $event->getTime()
+        ));
         $event->save(); // TODO: handle unique constraint exception
         return true;
     }
@@ -60,13 +77,13 @@ class Store
             return $this->visit;
         }
 
-        if ($this->visitToken) {
-            $this->visit = Visit::find_by_visit_token($this->visitToken);
+        if ($this->visit_token) {
+            $this->visit = Visit::findByVisitToken($this->visit_token);
             return $this->visit;
         }
 
-        if (Ahoy::COOKIES && $this->visitorToken) {
-            $this->visit = Visit::find_by_visitor_token($this->visitorToken);
+        if ($this->visitor_token) {
+            $this->visit = Visit::findByVisitorToken($this->visitor_token);
             return $this->visit;
         }
 
@@ -74,19 +91,20 @@ class Store
         return $this->visit;
     }
 
-    public function is_excluded(): bool
+    public function isExcluded(): bool
     {
-        return Ahoy::BLOCK_BOTS && $this->is_bot();
+        return $this->tracker->areBotsBlocked() && $this->isBot();
     }
 
-    public function generate_id(): string
+    public function generateId(): string
     {
         return Uuid::uuid4()->toString();
     }
 
-    // TODO:implement bot check
-    public function is_bot(): bool
+    public function isBot(): bool
     {
-        return false;
+        $dd = new DeviceDetector($this->user_agent);
+        $dd->parse();
+        return $dd->isBot();
     }
 }

@@ -4,29 +4,44 @@ namespace Ahoy;
 
 class Event
 {
-    public Visit $visit;
-    public int $user_id;
-    public string $name;
-    public string $properties;
-    public $time;
+    protected Visit $visit;
+    protected int $user_id;
+    protected string $name;
+    protected string $properties;
+    protected int $time = 0;
 
     public function __construct(array $data = [])
     {
-        $this->user_id = $data['user_id'] ?? 0;
-        $this->name = $data['name'] ?? '';
-        $this->properties = json_encode($data['properties'] ?? []);
-        $this->time = $data['time'] ?? time();
+        $this->user_id      = $data['user_id'];
+        $this->name         = $data['name'];
+        $this->properties   = json_encode($data['properties']);
     }
 
-    public function save(): bool
+    public function setVisit(Visit $visit): void
+    {
+        $this->visit = $visit;
+    }
+
+    public function setTime($time): void
+    {
+        $this->time = $time;
+    }
+
+    public function getTime(): int
+    {
+        return $this->time;
+    }
+
+    public function save(): int|bool
     {
         global $wpdb;
         $tblName = $wpdb->prefix . 'ahoy_events';
         $result = $wpdb->insert($tblName, [
-            'user_id' => $this->user_id,
-            'name' => $this->name,
-            'properties' => $this->properties,
-            'time' => $this->time->format('Y-m-d H:i:s'),
+            'visit_id'      => $this->visit->id,
+            'user_id'       => $this->user_id,
+            'name'          => $this->name,
+            'properties'    => $this->properties,
+            'time'          => $this->time,
         ]);
         return $result;
     }
@@ -40,9 +55,12 @@ class Event
         if (!$result) return null;
 
         return (object) [
-            'name' => $result->name,
-            'properties' => json_decode($result->properties ?? ''),
-            'user_id' => $result->user_id,
+            'id'            => $result->id,
+            'visit_id'      => $result->visit_id,
+            'user_id'       => $result->user_id,
+            'name'          => $result->name,
+            'properties'    => json_decode($result->properties ?? ''),
+            'time'          => $result->time,
         ];
     }
 }
