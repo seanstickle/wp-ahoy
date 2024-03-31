@@ -2,76 +2,91 @@
 
 namespace Ahoy;
 
-use Ramsey\Uuid\Uuid;
-use Ahoy\Visit;
+use Ahoy\Ahoy;
 use Ahoy\Event;
+use Ahoy\Visit;
+use Ramsey\Uuid\Uuid;
 
 class Store
 {
-    public Visit $visit;
+    public ?Visit $visit;
     public bool $server_side_visits = true;
 
-    public function __construct()
+    public ?string $visitToken;
+    public ?string $visitorToken;
+
+    public function __construct(string $visitorToken = null, string $visitToken = null)
     {
+        $this->visit = null;
+        $this->visitorToken = $visitorToken;
+        $this->visitToken = $visitToken;
     }
 
-    public function track_visit(array $data)
+    public function track_visit(array $data = []): bool
     {
-        try {
-            $this->visit = (new Visit($data))->save();
-        } catch (\Exception $e) {
-            throw $e; // TODO: unless it's a duplicate
-            if (isset($this->visit)) unset($this->visit);
-        }
+        $this->visit = new Visit($data);
+        $this->visit->save(); // TODO: handle unique constraint exception
+        return true;
     }
 
-    public function track_event(array $data)
+    public function visit_or_create(array $data =  []): Visit
     {
-        $visit = true; // $this->visit_or_create(started_at: $data['time']);
-
-        if ($visit) {
-            $event = new Event($data);
-            // $event->visit = $visit;
-            // $event->time = max($visit->started_at, $event->time);
-            try {
-                $event->save();
-            } catch (\Exception $e) {
-                throw $e; // TODO: unless it's a duplicate
-            }
-        } else {
-            error_log("[ahoy] Event excluded since visit not created: {$data['visit_token']}");
+        if (!$this->visit && $this->server_side_visits) {
+            $this->track_visit(['started_at' => $data['started_at']]);
         }
+
+        return $this->getVisit();
     }
 
-    // if we don't have a visit, let's try to create one first
-    private function visit_or_create(\DateTime $started_at = null): Visit
+    public function track_event(array $data = []): bool
     {
-        if (!isset($this->visit) && $this->server_side_visits) {
-            $this->track_visit(['started_at' => $started_at]);
+        $visit = $this->visit_or_create(['started_at' => $data['time']]);
+
+        if (!$visit) {
+            Ahoy::log("Event excluded since visit not created: {$data['visit_token']}");
+            return false;
         }
-        return $this->visit();
+
+        $event = new Event($data);
+        $event->visit = $visit;
+        $event->time = max($visit->started_at, $event->time);
+        $event->save(); // TODO: handle unique constraint exception
+        return true;
     }
 
-    public function visit(): Visit
+    public function getVisit(): Visit
     {
-        if (!isset($this->visit)) {
-            if ($existing_visit_token) {
-            } else if (!$cookies && $visitor_token) {
-            } else {
-                $this->visit = null;
-            }
+        if ($this->visit) {
+            return $this->visit;
         }
 
+        if ($this->visitToken) {
+            $this->visit = Visit::find_by_visit_token($this->visitToken);
+            return $this->visit;
+        }
+
+        if (Ahoy::COOKIES && $this->visitorToken) {
+            $this->visit = Visit::find_by_visitor_token($this->visitorToken);
+            return $this->visit;
+        }
+
+        $this->visit = null;
         return $this->visit;
     }
 
-    public function exclude(): bool
+    public function is_excluded(): bool
     {
-        return false;
+        return Ahoy::BLOCK_BOTS && $this->is_bot();
     }
 
     public function generate_id(): string
     {
-        return Uuid::uuid4();
+        return Uuid::uuid4()->toString();
+    }
+
+    // TODO:implement bot check
+    public function is_bot(): bool
+    {
+        return false;
     }
 }

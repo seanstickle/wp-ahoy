@@ -12,72 +12,113 @@ class Tracker
     public Store $store;
     public $controller;
     public $request;
-    public $visit_token;
+    public $visitToken;
     public $user;
     public $options;
+    public $visitProperties;
 
-    public bool $exclude;
+    public bool $is_excluded;
 
     public function __construct(array $options = [])
     {
-        $this->store = new Store();
-        $this->controller = $options['controller'] ?? null;
-        $this->request = $options['request'] ?? null;
-        $this->visit_token = $options['visit_token'] ?? null;
-        $this->user = $options['user'] ?? null;
-        $this->options = $options;
+        $this->store        = new Store();
+        $this->controller   = $options['controller'] ?? null;
+        $this->request      = $options['request'] ?? null;
+        $this->visitToken   = $options['visit_token'] ?? null;
+        $this->user         = $options['user'] ?? null;
+        $this->options      = $options;
     }
 
     public function track(string $name = '', array $properties = [], array $options = []): bool
     {
-        if ($this->exclude()) {
-            $this->debug("Event excluded");
-        } else {
-            $data = [
-                'visit_token' => $this->visit_token,
-                'user_id' => $this->user->id ?? 0,
-                'name' => $name,
-                'properties' => $properties,
-                'time' => $this->trustedTime($options['time'] ?? 0),
-                'event_id' => $options['id'] ?? $this->generate_id()
-            ];
-            $data = array_filter($data, fn ($v) => $v);
-            $this->store->track_event($data);
+        if ($this->is_excluded()) {
+            Ahoy::log("Event excluded");
+            return true;
         }
+
+        $data = [
+            'visit_token'   => $this->visitToken,
+            'user_id'       => $this->user->id ?? null,
+            'name'          => $name,
+            'properties'    => $properties,
+            'time'          => $this->trustedTime($options['time'] ?? 0),
+            'event_id'      => $options['id'] ?? $this->generate_id()
+        ];
+
+        $this->store->track_event($data);
         return true;
     }
+
+    // TODO: implement deferred tracking support & queued geocoding
+    public function track_visit(): bool
+    {
+        if ($this->is_excluded()) {
+            Ahoy::log("Visit excluded");
+            return true;
+        }
+
+        $data = [
+            'visit_token'   => $this->visitToken,
+            'visitor_token' => $this->store->visitorToken,
+            'user_id'       => $this->user->id ?? null,
+            'started_at'    => $this->trustedTime($options['started_at'] ?? 0)
+        ];
+
+        $data = array_merge($data, $this->getVisitProperties());
+        $this->store->track_visit($data);
+        return true;
+    }
+
+    public function trustedTime(int $ts = null): int
+    {
+        if (!$ts) {
+            return time();
+        }
+
+        $is_ts_current = strtotime('-1 minute') <= $ts && $ts <= time();
+
+        if ($this->from_api() && !$is_ts_current) {
+            return time();
+        }
+
+        return $ts;
+    }
+
+    public function getVisitProperties(): array
+    {
+        if ($this->visitProperties) {
+            return $this->visitProperties;
+        }
+
+        if ($this->request) {
+            $visitProperties = new VisitProperties($this->request, $this->from_api());
+            $this->visitProperties = $visitProperties->toArray();
+            return $this->visitProperties;
+        }
+
+        $this->visitProperties = [];
+        return $this->visitProperties;
+    }
+
+    /**
+     *
+     * private functions
+     *
+     */
 
     private function generate_id(): string
     {
         return $this->store->generate_id();
     }
 
-
-    private function trustedTime(int $time = null): \DateTime
+    private function from_api(): bool
     {
-        $current = strtotime('-1 minute') <= $time && $time <= time();
-        if (!$time || ($this->api() && !$current)) {
-            return new \DateTime();
-        } else {
-            return (new \DateTime)->setTimestamp($time);
-        }
+        return (bool) ($this->options['api'] ?? false);
     }
 
-    private function api(): bool
+    private function is_excluded(): bool
     {
-        return (bool) $this->options['api'];
-    }
-
-    private function debug(string $message): void
-    {
-        error_log($message);
-    }
-
-    private function exclude(): bool
-    {
-        if (!isset($this->exclude)) {
-            $this->exclude = $this->store->exclude();
-        }
-        return $this->exclude;
+        $this->is_excluded ??= $this->store->is_excluded();
+        return $this->is_excluded;
     }
 }

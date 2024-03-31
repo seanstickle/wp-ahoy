@@ -12,6 +12,7 @@
 
 require "vendor/autoload.php";
 
+require "lib/ahoy/Ahoy.php";
 require "lib/ahoy/Event.php";
 require "lib/ahoy/Store.php";
 require "lib/ahoy/Tracker.php";

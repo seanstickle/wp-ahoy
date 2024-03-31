@@ -9,7 +9,6 @@ class VisitProperties
     public array $params;
     public string $referrer;
     public string $landingPage;
-    private array $generate;
 
     public function __construct(array $request, bool $api = false)
     {
@@ -19,19 +18,33 @@ class VisitProperties
         $this->landingPage = $api ? $this->params['landing_page'] : $_SERVER['REQUEST_URI'];
     }
 
-    public function generate(): void
+    public function toArray(): array
     {
-        $this->generate = array_merge(
-            $this->requestProperties(),
-            $this->techProperties(),
-            $this->trafficProperties(),
-            $this->utmProperties()
+        return array_merge(
+            $this->getRequestProperties(),
+            $this->getTechProperties(),
+            $this->getTrafficProperties(),
+            $this->getUtmProperties()
         );
     }
 
-    private function utmProperties(): array
+    /**
+     *
+     * private functions
+     *
+     */
+
+    private function getUtmProperties(): array
     {
+        $landingUri = parse_url($this->landingPage);
+
         $landingParams = [];
+
+        if (isset($landingUri["query"])) {
+            parse_str($landingUri["query"], $landingParams);
+        }
+
+        $properties = [];
 
         $utm = [
             'utm_source',
@@ -41,14 +54,6 @@ class VisitProperties
             'utm_campaign'
         ];
 
-        $landingUri = parse_url($this->landingPage);
-
-        if (isset($landingUri["query"])) {
-            parse_str($landingUri["query"], $landingParams);
-        }
-
-        $properties = [];
-
         foreach ($utm as $key) {
             $properties[$key] = $this->params[$key] ?? $landingParams[$key] ?? null;
         }
@@ -56,7 +61,7 @@ class VisitProperties
         return $properties;
     }
 
-    private function trafficProperties(): array
+    private function getTrafficProperties(): array
     {
         $uri = parse_url($this->referrer ?? '');
 
@@ -68,7 +73,7 @@ class VisitProperties
     }
 
     // TODO: Implement tech_properties
-    private function techProperties(): array
+    private function getTechProperties(): array
     {
         $properties = [
             'browser' => '',
@@ -79,13 +84,7 @@ class VisitProperties
         return $properties;
     }
 
-    // TODO: Implement IP masking
-    private function ip(): string
-    {
-        return $_SERVER['REMOTE_ADDR'];
-    }
-
-    private function requestProperties(): array
+    private function getRequestProperties(): array
     {
         $properties = [
             'ip' => $this->ip(),
@@ -100,6 +99,12 @@ class VisitProperties
         ];
 
         return $properties;
+    }
+
+    // TODO: Implement optiopnal IP masking
+    private function ip(): string
+    {
+        return $_SERVER['REMOTE_ADDR'];
     }
 
     private function ensureUtf8(string $string): string
