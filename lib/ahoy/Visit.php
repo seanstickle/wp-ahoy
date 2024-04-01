@@ -10,8 +10,6 @@ class Visit
     // visit + visitor params
     protected ?string $visit_token = null;
     protected ?string $visitor_token = null;
-
-    // wordpress user id
     protected ?int $user_id = null;
 
     // request params
@@ -54,26 +52,31 @@ class Visit
 
     public function __construct(array $data = [])
     {
-        $this->visit_token      = $data['visit_token'] ?? null;
-        $this->visitor_token    = $data['visitor_token'] ?? null;
+        // visit + visitor params
+        $this->visit_token      = $data['visit_token'];
+        $this->visitor_token    = $data['visitor_token'];
         $this->user_id          = $data['user_id'];
 
+        // request params
         $this->ip               = $data['ip'] ?? null;
         $this->user_agent       = $data['user_agent'] ?? null;
         $this->referrer         = $data['referrer'] ?? null;
         $this->referring_domain = $data['referring_domain'] ?? null;
         $this->landing_page     = $data['landing_page'] ?? null;
 
+        // traffic params
         $this->utm_source       = $data['utm_source'] ?? null;
         $this->utm_medium       = $data['utm_medium'] ?? null;
         $this->utm_term         = $data['utm_term'] ?? null;
         $this->utm_content      = $data['utm_content'] ?? null;
         $this->utm_campaign     = $data['utm_campaign'] ?? null;
 
+        // tech params
         $this->browser          = $data['browser'] ?? null;
         $this->os               = $data['os'] ?? null;
         $this->device_type      = $data['device_type'] ?? null;
 
+        // timestamp
         $this->started_at       = $data['started_at'];
     }
 
@@ -82,26 +85,31 @@ class Visit
         global $wpdb;
         $tblName = $wpdb->prefix . 'ahoy_visits';
         $result = $wpdb->insert($tblName, [
+            // visit + visitor params
             'visit_token'       => $this->visit_token,
             'visitor_token'     => $this->visitor_token,
             'user_id'           => $this->user_id,
 
+            // request params
             'ip'                => $this->ip,
             'user_agent'        => $this->user_agent,
             'referrer'          => $this->referrer,
             'referring_domain'  => $this->referring_domain,
             'landing_page'      => $this->landing_page,
 
+            // traffic params
             'utm_source'        => $this->utm_source,
             'utm_medium'        => $this->utm_medium,
             'utm_term'          => $this->utm_term,
             'utm_content'       => $this->utm_content,
             'utm_campaign'      => $this->utm_campaign,
 
+            // tech params
             'browser'           => $this->browser,
             'os'                => $this->os,
             'device_type'       => $this->device_type,
 
+            // timestamp
             'started_at'        => date('Y-m-d H:i:s', $this->started_at),
         ]);
 

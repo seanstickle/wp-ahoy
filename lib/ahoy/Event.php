@@ -7,14 +7,14 @@ class Event
     protected Visit $visit;
     protected int $user_id;
     protected string $name;
-    protected string $properties;
+    protected array $properties;
     protected int $time = 0;
 
     public function __construct(array $data = [])
     {
         $this->user_id      = $data['user_id'];
         $this->name         = $data['name'];
-        $this->properties   = json_encode($data['properties']);
+        $this->properties   = $data['properties'];
     }
 
     public function setVisit(Visit $visit): void
@@ -40,8 +40,8 @@ class Event
             'visit_id'      => $this->visit->id,
             'user_id'       => $this->user_id,
             'name'          => $this->name,
-            'properties'    => $this->properties,
-            'time'          => $this->time,
+            'properties'    => json_encode($this->properties),
+            'time'          => date('Y-m-d H:i:s', $this->time),
         ]);
         return $result;
     }

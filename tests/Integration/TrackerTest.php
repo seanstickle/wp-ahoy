@@ -138,12 +138,14 @@ class TrackerTest extends \lucatume\WPBrowser\TestCase\WPTestCase
         $_REQUEST = array_merge($_GET, $_POST, $_COOKIE);
 
         $ahoy = new \Ahoy\Tracker();
-        $ahoy->track("Some event", ['some_prop' => true]);
+        $ahoy->track("Some event", ['some_prop' => 'some_value']);
 
         $visit = \Ahoy\Visit::last();
         codecept_debug(print_r($visit, true));
 
         $event = \Ahoy\Event::last();
+        codecept_debug(print_r($event, true));
+
         $this->assertEquals("Some event", $event->name);
         $this->assertEquals(['some_prop' => true], (array) $event->properties);
         $this->assertEquals(0, $event->user_id);

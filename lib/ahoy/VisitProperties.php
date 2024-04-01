@@ -6,17 +6,8 @@ use DeviceDetector\DeviceDetector;
 
 class VisitProperties
 {
-    public array $request;
-    public ?string $referrer;
-    public ?string $landingPage;
-    public ?string $user_agent;
-
     public function __construct()
     {
-        $this->request      = $_REQUEST ?? [];
-        $this->referrer     = $_SERVER['HTTP_REFERER'] ?? null;
-        $this->landingPage  = $_SERVER['REQUEST_URI'] ?? null;
-        $this->user_agent   = $_SERVER['HTTP_USER_AGENT'] ?? null;
     }
 
     public function toArray(): array
@@ -42,7 +33,7 @@ class VisitProperties
         ];
 
         foreach ($utm as $key) {
-            $properties[$key] = $this->request[$key] ?? null;
+            $properties[$key] = $_REQUEST[$key] ?? null;
         }
 
         return $properties;
@@ -50,27 +41,20 @@ class VisitProperties
 
     private function getTrafficProperties(): array
     {
-        $uri = parse_url($this->referrer);
-
-        $properties = [
-            'referring_domain' => $uri['host'] ?? null
-        ];
-
-        return $properties;
+        $uri = parse_url($_SERVER['HTTP_REFERER'] ?? null);
+        return ['referring_domain' => $uri['host'] ?? null];
     }
 
     private function getTechProperties(): array
     {
-        $dd = new DeviceDetector($this->user_agent);
+        $dd = new DeviceDetector($_SERVER['HTTP_USER_AGENT'] ?? '');
         $dd->parse();
 
-        $properties = [
+        return [
             'browser'       => $dd->getClient('name'),
             'os'            => $dd->getOs('name'),
             'device_type'   => $dd->getDeviceName(),
         ];
-
-        return $properties;
     }
 
     // TODO: add optional IP masking for GDPR compliance

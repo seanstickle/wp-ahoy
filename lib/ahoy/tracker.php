@@ -2,27 +2,27 @@
 
 namespace Ahoy;
 
-use Ahoy\Store;
+use DeviceDetector\DeviceDetector;
+use Ramsey\Uuid\Uuid;
 
 class Tracker
 {
-    protected Store $store;
-    protected array $request;
-    protected ?string $visit_token;
-    protected ?string $visitor_token;
-    protected array $options;
-    protected array $visit_properties;
     protected bool $are_bots_blocked;
     public bool $is_excluded;
 
+    protected Visit $visit;
+    protected ?string $visit_token;
+    protected ?string $visitor_token;
+
+    protected array $visit_properties;
+    protected array $options;
+
     public function __construct(array $options = [])
     {
-        $this->store            = new Store($this);
-        $this->request          = $_REQUEST;
         $this->visit_token      = $options['visit_token'] ?? null;
-        $this->visit_properties = [];
         $this->are_bots_blocked = $options['block_bots'] ?? true;
         $this->options          = $options;
+        $this->visit_properties = [];
     }
 
     public function track(string $name = '', array $properties = [], array $options = []): bool
@@ -40,8 +40,45 @@ class Tracker
             'time'          => $this->getTrustedTime($options['time'] ?? 0),
         ];
 
-        $this->store->trackEvent($data);
+        // get (or create) the visit for this event
+        $visit = $this->visitOrCreate(started_at: $data['time']);
+
+        if (!$visit) {
+            Ahoy::log("Event excluded since visit not created: {$data['visit_token']}");
+            return false;
+        }
+
+        $event = new Event($data);
+        $event->setVisit($visit);
+        $event->setTime(max($visit->started_at, $event->getTime()));
+        $event->save();
         return true;
+    }
+
+    public function visitOrCreate(int $started_at = null): Visit
+    {
+        if (!isset($this->visit)) $this->trackVisit($started_at);
+        return $this->getVisit();
+    }
+
+    public function getVisit(): Visit
+    {
+        if ($this->visit) {
+            return $this->visit;
+        }
+
+        if ($this->visit_token) {
+            $this->visit = Visit::findByVisitToken($this->visit_token);
+            return $this->visit;
+        }
+
+        if ($this->visitor_token) {
+            $this->visit = Visit::findByVisitorToken($this->visitor_token);
+            return $this->visit;
+        }
+
+        $this->visit = null;
+        return $this->visit;
     }
 
     // TODO: add deferred tracking
@@ -61,7 +98,19 @@ class Tracker
         ];
 
         $data = array_merge($data, $this->getVisitProperties());
-        $this->store->trackVisit($data);
+
+        $this->visit = new Visit($data);
+
+        try {
+            $this->visit->save();
+        } catch (\Exception $e) {
+            if ($this->isDuplicateIdException($e)) {
+                unset($this->visit); // unset so the code fetches the correct visit
+            } else {
+                throw $e; // bubble up other exceptions
+            }
+        }
+
         return true;
     }
 
@@ -86,7 +135,7 @@ class Tracker
             return $this->visit_properties;
         }
 
-        if ($this->request) {
+        if ($_REQUEST) {
             $visit_properties = new VisitProperties();
             $this->visit_properties = $visit_properties->toArray();
             return $this->visit_properties;
@@ -114,7 +163,7 @@ class Tracker
 
     private function generateId(): string
     {
-        return $this->store->generateId();
+        return Uuid::uuid4()->toString();
     }
 
     private function fromApi(): bool
@@ -124,8 +173,15 @@ class Tracker
 
     private function isExcluded(): bool
     {
-        $this->is_excluded ??= $this->store->isExcluded();
+        $this->is_excluded ??= $this->areBotsBlocked() && $this->isBot();
         return $this->is_excluded;
+    }
+
+    public function isBot(): bool
+    {
+        $dd = new DeviceDetector($_SERVER['HTTP_USER_AGENT'] ?? '');
+        $dd->parse();
+        return $dd->isBot();
     }
 
     private function getVisitToken(): string
@@ -201,5 +257,10 @@ class Tracker
         $token = mb_convert_encoding($token, 'UTF-8', mb_detect_encoding($token));
         $token = preg_replace('/[^a-z0-9\-]/i', '', $token);
         return substr($token, 0, 64);
+    }
+
+    private function isDuplicateIdException(\Exception $e): bool
+    {
+        return $e->getCode() === 1062 || $e->getCode() === 23000;
     }
 }

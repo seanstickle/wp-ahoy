@@ -8,11 +8,11 @@ function ahoy_activation(): void
     $charset_collate = $wpdb->get_charset_collate();
 
     // visits table
-    $table_name = $wpdb->prefix . "ahoy_visits";
+    $visits_table_name = $wpdb->prefix . "ahoy_visits";
     $sql = <<<SQL
-        CREATE TABLE IF NOT EXISTS {$table_name} (
+        CREATE TABLE IF NOT EXISTS {$visits_table_name} (
             `id`                BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
-            `visit_token`       VARCHAR(255),
+            `visit_token`       VARCHAR(255) UNIQUE,
             `visitor_token`     VARCHAR(255),
             `user_id`           BIGINT,
             `ip`                VARCHAR(255),
@@ -36,21 +36,24 @@ function ahoy_activation(): void
             `app_version`       VARCHAR(255),
             `os_version`        VARCHAR(255),
             `platform`          VARCHAR(255),
-            `started_at`        DATETIME
+            `started_at`        DATETIME,
+            INDEX `visitor_token_started_at_idx` (`visitor_token`, `started_at`)
         ) {$charset_collate}
     SQL;
     dbDelta($sql);
 
     // events table
-    $table_name = $wpdb->prefix . "ahoy_events";
+    $events_table_name = $wpdb->prefix . "ahoy_events";
     $sql = <<<SQL
-        CREATE TABLE IF NOT EXISTS {$table_name} (
+        CREATE TABLE IF NOT EXISTS {$events_table_name} (
             `id`                BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT,
             `visit_id`          BIGINT,
             `user_id`           BIGINT,
             `name`              VARCHAR(255),
             `properties`        TEXT,
-            `time`              DATETIME
+            `time`              DATETIME,
+            INDEX `name_time_idx` (`name`, `time`),
+            FOREIGN KEY (`visit_id`) REFERENCES `{$visits_table_name}`(`id`) ON DELETE CASCADE
         ) {$charset_collate}
     SQL;
     dbDelta($sql);
