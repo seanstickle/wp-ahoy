@@ -223,7 +223,7 @@
 
   function sendRequest(url, data, success) {
     if (canStringify) {
-      if ($ && $.ajax) {
+      if (false && $ && $.ajax) {
         $.ajax({
           type: "POST",
           url: url,
