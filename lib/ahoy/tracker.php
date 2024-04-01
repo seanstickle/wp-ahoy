@@ -30,7 +30,7 @@ class Tracker
     public function track(string $name = '', array $properties = [], array $options = []): bool
     {
         if ($this->isExcluded()) {
-            Ahoy::log("Event excluded");
+            $this->log("Event excluded");
             return true;
         }
 
@@ -45,10 +45,8 @@ class Tracker
         // get (or create) the visit for this event
         $visit = $this->visitOrCreate(started_at: $data['time']);
 
-        file_put_contents('/Users/seanstickle/Desktop/rest.txt', print_r($visit, true) . PHP_EOL, FILE_APPEND);
-
         if (!$visit) {
-            Ahoy::log("Event excluded since visit not created: {$data['visit_token']}");
+            $this->log("Event excluded since visit not created: {$data['visit_token']}");
             return false;
         }
 
@@ -90,7 +88,7 @@ class Tracker
     public function trackVisit(float $started_at = null): bool
     {
         if ($this->isExcluded()) {
-            Ahoy::log("Visit excluded");
+            $this->log("Visit excluded");
             return true;
         }
 
@@ -179,7 +177,7 @@ class Tracker
         return $this->is_excluded;
     }
 
-    public function isBot(): bool
+    private function isBot(): bool
     {
         $dd = new DeviceDetector($_SERVER['HTTP_USER_AGENT'] ?? '');
         $dd->parse();
@@ -261,8 +259,8 @@ class Tracker
         return substr($token, 0, 64);
     }
 
-    private function isDuplicateIdException(\Exception $e): bool
+    private static function log(string $message): void
     {
-        return $e->getCode() === 1062 || $e->getCode() === 23000 || stripos($e->getMessage(), 'duplicate') !== false;
+        error_log("[ahoy] $message");
     }
 }

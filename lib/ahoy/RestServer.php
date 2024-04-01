@@ -52,7 +52,7 @@ class Ahoy_Event_Controller extends WP_REST_Controller
 {
     public function create(WP_REST_Request $request)
     {
-        $ahoy = new \Ahoy\Tracker(["api" => true]);
+        $ahoy = new \Ahoy\Tracker(["request" => $request->get_params(), "api" => true]);
         $params = $request->get_params();
         $eventsJson = $params['events_json'];
         $props = json_decode($eventsJson, true)[0];

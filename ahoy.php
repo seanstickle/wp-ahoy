@@ -9,14 +9,13 @@
  *
  **/
 
-require 'vendor/autoload.php';
-require 'activate.php';
-require 'lib/ahoy/RestServer.php';
-require 'lib/ahoy/Ahoy.php';
-require 'lib/ahoy/Tracker.php';
-require 'lib/ahoy/Visit.php';
-require 'lib/ahoy/VisitProperties.php';
-require 'lib/ahoy/Event.php';
+require_once 'vendor/autoload.php';
+require_once 'activate.php';
+require_once 'lib/ahoy/RestServer.php';
+require_once 'lib/ahoy/Tracker.php';
+require_once 'lib/ahoy/Visit.php';
+require_once 'lib/ahoy/VisitProperties.php';
+require_once 'lib/ahoy/Event.php';
 
 //
 // enqueue javascript

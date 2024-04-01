@@ -4,6 +4,8 @@ namespace Ahoy;
 
 class Visit
 {
+    const VISIT_DURATION = 4 * 60 * 60; // 4 hours
+
     // id
     public int $id;
 
@@ -150,7 +152,7 @@ class Visit
             ORDER BY started_at DESC
         SQL;
 
-        $ts = microtime(true) - Ahoy::VISIT_DURATION;
+        $ts = microtime(true) - Visit::VISIT_DURATION;
         $now = \DateTime::createFromFormat("U.u", $ts);
 
         $result = $wpdb->get_row($wpdb->prepare(
