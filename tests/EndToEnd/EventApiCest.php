@@ -11,6 +11,7 @@ class EventApiCest
         return [
             'name' => 'test_event',
             'properties' => ['foo' => 'bar'],
+            'time' => time(),
         ];
     }
 
@@ -24,7 +25,13 @@ class EventApiCest
     {
         $I->amOnPage('/sample-page');
         $nonce = $I->grabAttributeFrom('html head meta[name=ahoy]', 'content');
-        $I->sendAjaxPostRequest('/wp-json/ahoy/v1/events', array_merge($this->eventData(), ['_wpnonce' => $nonce]));
+
+        $data = [
+            '_wpnonce' => $nonce,
+            'events_json' => $this->eventData(),
+        ];
+
+        $I->sendAjaxPostRequest('/wp-json/ahoy/v1/events', $data);
         $I->seeResponseCodeIs(201); // created
     }
 }

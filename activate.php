@@ -1,5 +1,8 @@
 <?php
 
+register_activation_hook(__DIR__ . '/ahoy.php', 'ahoy_activation');
+register_uninstall_hook(__DIR__ . '/ahoy.php', 'ahoy_uninstall');
+
 function ahoy_activation(): void
 {
     global $wpdb;

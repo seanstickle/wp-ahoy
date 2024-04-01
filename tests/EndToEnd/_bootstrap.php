@@ -9,3 +9,15 @@
  * and re-created from the dump file(s).
  *
  */
+
+// add trigger for server-side page:view event
+function ahoy_add_server_side_page_view_event()
+{
+    add_filter('the_post', 'ahoy_track_page_view');
+    function ahoy_track_page_view($post)
+    {
+        $ahoy = new \Ahoy\Tracker();
+        $ahoy->track("page:view", ['postId' => $post->ID]);
+        return $post;
+    }
+}

@@ -11,11 +11,7 @@ class VisitApiCest
         return [
             'visit_token' => 'visitId',
             'visitor_token' => 'visitorId',
-            'platform' => 'config.platform',
-            'landing_page' => 'window.location.href',
-            'screen_width' => 'window.screen.width',
-            'screen_height' => 'window.screen.height',
-            'js' => 'true',
+            'landing_page' => '/products/?utm_source=facebook&utm_medium=social&utm_term=keyword1&utm_content=ad1&utm_campaign=summer_sale',
         ];
     }
 
