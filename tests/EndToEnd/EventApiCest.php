@@ -28,10 +28,10 @@ class EventApiCest
 
         $data = [
             '_wpnonce' => $nonce,
-            'events_json' => $this->eventData(),
+            'events_json' => json_encode([$this->eventData()]),
         ];
 
         $I->sendAjaxPostRequest('/wp-json/ahoy/v1/events', $data);
-        $I->seeResponseCodeIs(201); // created
+        $I->seeResponseCodeIs(200); // created
     }
 }

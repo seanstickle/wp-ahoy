@@ -43,7 +43,7 @@ class Ahoy_Visit_Controller extends WP_REST_Controller
         $ahoy = new \Ahoy\Tracker(["request" => $request->get_params(), "api" => true]);
         $visit = $ahoy->trackVisit();
         return $visit
-            ? new WP_REST_Response(['message' => 'visit created'], 201)
+            ? new WP_REST_Response(null, 200)
             : new WP_REST_Response(null, 500);
     }
 }
@@ -58,7 +58,7 @@ class Ahoy_Event_Controller extends WP_REST_Controller
         $props = json_decode($eventsJson, true)[0];
         $event = $ahoy->track($props['name'], $props['properties'], ['time' => $props['time']]);
         return $event
-            ? new WP_REST_Response(['message' => 'event created'], 201)
+            ? new WP_REST_Response(null, 200)
             : new WP_REST_Response(null, 500);
     }
 }
