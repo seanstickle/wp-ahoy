@@ -6,8 +6,11 @@ use DeviceDetector\DeviceDetector;
 
 class VisitProperties
 {
-    public function __construct()
+    protected array $request;
+
+    public function __construct(array $request)
     {
+        $this->request = $request;
     }
 
     public function toArray(): array
@@ -33,7 +36,7 @@ class VisitProperties
         ];
 
         foreach ($utm as $key) {
-            $properties[$key] = $_REQUEST[$key] ?? null;
+            $properties[$key] = $this->request[$key] ?? null;
         }
 
         return $properties;

@@ -4,11 +4,11 @@ namespace Ahoy;
 
 class Event
 {
-    protected Visit $visit;
+    protected object $visit;
     protected int $user_id;
     protected string $name;
     protected array $properties;
-    protected int $time = 0;
+    protected float $time = 0;
 
     public function __construct(array $data = [])
     {
@@ -17,17 +17,17 @@ class Event
         $this->properties   = $data['properties'];
     }
 
-    public function setVisit(Visit $visit): void
+    public function setVisit(object $visit): void
     {
         $this->visit = $visit;
     }
 
-    public function setTime($time): void
+    public function setTime(float $time): void
     {
         $this->time = $time;
     }
 
-    public function getTime(): int
+    public function getTime(): float
     {
         return $this->time;
     }
@@ -36,12 +36,15 @@ class Event
     {
         global $wpdb;
         $tblName = $wpdb->prefix . 'ahoy_events';
+
+        $now = \DateTime::createFromFormat("U.u", $this->time);
+
         $result = $wpdb->insert($tblName, [
             'visit_id'      => $this->visit->id,
             'user_id'       => $this->user_id,
             'name'          => $this->name,
             'properties'    => json_encode($this->properties),
-            'time'          => date('Y-m-d H:i:s', $this->time),
+            'time'          => $now->format("Y-m-d H:i:s.u"),
         ]);
         return $result;
     }

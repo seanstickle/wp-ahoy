@@ -28,7 +28,8 @@ class Ahoy_Router
 
     public function verifyNonce(WP_REST_Request $request): bool
     {
-        $token = $request->get_param('_wpnonce');
+        $token = $_SERVER['HTTP_X_WP_NONCE'] ?? null;
+        $token ??= $request->get_param('_wpnonce');
         return wp_verify_nonce($token, 'wp_rest');
     }
 }
@@ -37,9 +38,9 @@ class Ahoy_Router
 
 class Ahoy_Visit_Controller extends WP_REST_Controller
 {
-    public function create()
+    public function create(WP_REST_Request $request)
     {
-        $ahoy = new \Ahoy\Tracker(["api" => true]);
+        $ahoy = new \Ahoy\Tracker(["request" => $request->get_params(), "api" => true]);
         $visit = $ahoy->trackVisit();
         return $visit
             ? new WP_REST_Response(['message' => 'visit created'], 201)
@@ -49,10 +50,12 @@ class Ahoy_Visit_Controller extends WP_REST_Controller
 
 class Ahoy_Event_Controller extends WP_REST_Controller
 {
-    public function create()
+    public function create(WP_REST_Request $request)
     {
         $ahoy = new \Ahoy\Tracker(["api" => true]);
-        $props = $_POST['events_json'];
+        $params = $request->get_params();
+        $eventsJson = $params['events_json'];
+        $props = json_decode($eventsJson, true)[0];
         $event = $ahoy->track($props['name'], $props['properties'], ['time' => $props['time']]);
         return $event
             ? new WP_REST_Response(['message' => 'event created'], 201)

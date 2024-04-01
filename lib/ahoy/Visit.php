@@ -48,7 +48,7 @@ class Visit
     // public ?string $os_version = null;
 
     // timestamp
-    public int $started_at;
+    public float $started_at;
 
     public function __construct(array $data = [])
     {
@@ -84,6 +84,9 @@ class Visit
     {
         global $wpdb;
         $tblName = $wpdb->prefix . 'ahoy_visits';
+
+        $now = \DateTime::createFromFormat("U.u", $this->started_at);
+
         $result = $wpdb->insert($tblName, [
             // visit + visitor params
             'visit_token'       => $this->visit_token,
@@ -110,7 +113,7 @@ class Visit
             'device_type'       => $this->device_type,
 
             // timestamp
-            'started_at'        => date('Y-m-d H:i:s', $this->started_at),
+            'started_at'        => $now->format("Y-m-d H:i:s.u"),
         ]);
 
         $this->id = $wpdb->insert_id;
@@ -130,6 +133,9 @@ class Visit
         global $wpdb;
         $tblName = $wpdb->prefix . 'ahoy_visits';
         $result = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$tblName} WHERE visit_token = %s", $visit_token));
+        if ($result) {
+            $result->started_at = \DateTime::createFromFormat("Y-m-d H:i:s.u", $result->started_at)->format("U.u");
+        }
         return $result;
     }
 
@@ -143,11 +149,18 @@ class Visit
             AND started_at >= %
             ORDER BY started_at DESC
         SQL;
+
+        $ts = microtime(true) - Ahoy::VISIT_DURATION;
+        $now = \DateTime::createFromFormat("U.u", $ts);
+
         $result = $wpdb->get_row($wpdb->prepare(
             $sql,
             $visitor_token,
-            date("Y-m-d H:i:s", time() - Ahoy::VISIT_DURATION)
+            $now->format("Y-m-d H:i:s.u"),
         ));
+        if ($result) {
+            $result->started_at = \DateTime::createFromFormat("Y-m-d H:i:s.u", $result->started_at)->format("U.u");
+        }
         return $result;
     }
 }

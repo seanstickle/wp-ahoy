@@ -10,19 +10,21 @@ class Tracker
     protected bool $are_bots_blocked;
     public bool $is_excluded;
 
-    protected Visit $visit;
+    protected object $visit;
     protected ?string $visit_token;
     protected ?string $visitor_token;
 
     protected array $visit_properties;
     protected array $options;
 
+    protected array $request;
+
     public function __construct(array $options = [])
     {
         $this->visit_token      = $options['visit_token'] ?? null;
         $this->are_bots_blocked = $options['block_bots'] ?? true;
+        $this->request          = $options['request'] ?? $_REQUEST;
         $this->options          = $options;
-        $this->visit_properties = [];
     }
 
     public function track(string $name = '', array $properties = [], array $options = []): bool
@@ -43,6 +45,8 @@ class Tracker
         // get (or create) the visit for this event
         $visit = $this->visitOrCreate(started_at: $data['time']);
 
+        file_put_contents('/Users/seanstickle/Desktop/rest.txt', print_r($visit, true) . PHP_EOL, FILE_APPEND);
+
         if (!$visit) {
             Ahoy::log("Event excluded since visit not created: {$data['visit_token']}");
             return false;
@@ -55,15 +59,15 @@ class Tracker
         return true;
     }
 
-    public function visitOrCreate(int $started_at = null): Visit
+    public function visitOrCreate(float $started_at = null): object|null
     {
         if (!isset($this->visit)) $this->trackVisit($started_at);
         return $this->getVisit();
     }
 
-    public function getVisit(): Visit
+    public function getVisit(): object|null
     {
-        if ($this->visit) {
+        if (isset($this->visit)) {
             return $this->visit;
         }
 
@@ -83,7 +87,7 @@ class Tracker
 
     // TODO: add deferred tracking
     // TODO: add request geocoding
-    public function trackVisit(int $started_at = null): bool
+    public function trackVisit(float $started_at = null): bool
     {
         if ($this->isExcluded()) {
             Ahoy::log("Visit excluded");
@@ -100,30 +104,28 @@ class Tracker
         $data = array_merge($data, $this->getVisitProperties());
 
         $this->visit = new Visit($data);
+        $result = $this->visit->save();
 
-        try {
-            $this->visit->save();
-        } catch (\Exception $e) {
-            if ($this->isDuplicateIdException($e)) {
+        if ($result === false) {
+            global $wpdb;
+            if ($wpdb->last_error && stripos($wpdb->last_error, 'duplicate') !== false) {
                 unset($this->visit); // unset so the code fetches the correct visit
-            } else {
-                throw $e; // bubble up other exceptions
             }
         }
 
         return true;
     }
 
-    public function getTrustedTime(int $ts = null): int
+    public function getTrustedTime(float $ts = null): float
     {
         if (!$ts) {
-            return time();
+            return microtime(true);
         }
 
-        $is_ts_current = strtotime('-1 minute') <= $ts && $ts <= time();
+        $is_ts_current = strtotime('-1 minute') <= $ts && $ts <= microtime(true);
 
         if ($this->fromApi() && !$is_ts_current) {
-            return time();
+            return microtime(true);
         }
 
         return $ts;
@@ -131,12 +133,12 @@ class Tracker
 
     public function getVisitProperties(): array
     {
-        if ($this->visit_properties) {
+        if (isset($this->visit_properties)) {
             return $this->visit_properties;
         }
 
-        if ($_REQUEST) {
-            $visit_properties = new VisitProperties();
+        if ($this->request) {
+            $visit_properties = new VisitProperties($this->request);
             $this->visit_properties = $visit_properties->toArray();
             return $this->visit_properties;
         }
@@ -226,7 +228,7 @@ class Tracker
 
         // use param when sending through REST API
         if ($this->fromApi()) {
-            $visit_token ??= $_POST['visit_token'] ?? null;
+            $visit_token ??= $this->request['visit_token'] ?? null;
         }
 
         return $visit_token;
@@ -244,7 +246,7 @@ class Tracker
 
         // use param when sending through REST API
         if ($this->fromApi()) {
-            $visitor_token ??= $_POST['visitor_token'] ?? null;
+            $visitor_token ??= $this->request['visitor_token'] ?? null;
         }
 
         return $visitor_token;
@@ -261,6 +263,6 @@ class Tracker
 
     private function isDuplicateIdException(\Exception $e): bool
     {
-        return $e->getCode() === 1062 || $e->getCode() === 23000;
+        return $e->getCode() === 1062 || $e->getCode() === 23000 || stripos($e->getMessage(), 'duplicate') !== false;
     }
 }

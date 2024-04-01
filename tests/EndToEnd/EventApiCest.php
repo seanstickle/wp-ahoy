@@ -11,7 +11,7 @@ class EventApiCest
         return [
             'name' => 'test_event',
             'properties' => ['foo' => 'bar'],
-            'time' => time(),
+            'time' => microtime(true),
         ];
     }
 

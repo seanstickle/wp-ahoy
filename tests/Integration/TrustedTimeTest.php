@@ -33,7 +33,7 @@ class TrustedTimeTest extends \lucatume\WPBrowser\TestCase\WPTestCase
     public function test_with_api_and_current_time(): void
     {
         $ahoy = new \Ahoy\Tracker(['api' => true]);
-        $ts = time();
+        $ts = microtime(true);
 
         $trustedTime = $ahoy->getTrustedTime($ts);
         $this->assertEquals($ts, $trustedTime);
@@ -42,7 +42,7 @@ class TrustedTimeTest extends \lucatume\WPBrowser\TestCase\WPTestCase
     public function test_without_api_and_current_time(): void
     {
         $ahoy = new \Ahoy\Tracker(['api' => false]);
-        $ts = time();
+        $ts = microtime(true);
 
         $trustedTime = $ahoy->getTrustedTime($ts);
         $this->assertEquals($ts, $trustedTime);

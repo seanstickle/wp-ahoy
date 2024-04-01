@@ -39,7 +39,7 @@ function ahoy_activation(): void
             `app_version`       VARCHAR(255),
             `os_version`        VARCHAR(255),
             `platform`          VARCHAR(255),
-            `started_at`        DATETIME,
+            `started_at`        DATETIME(6),
             INDEX `visitor_token_started_at_idx` (`visitor_token`, `started_at`)
         ) {$charset_collate}
     SQL;
@@ -54,7 +54,7 @@ function ahoy_activation(): void
             `user_id`           BIGINT,
             `name`              VARCHAR(255),
             `properties`        TEXT,
-            `time`              DATETIME,
+            `time`              DATETIME(6),
             INDEX `name_time_idx` (`name`, `time`),
             FOREIGN KEY (`visit_id`) REFERENCES `{$visits_table_name}`(`id`) ON DELETE CASCADE
         ) {$charset_collate}

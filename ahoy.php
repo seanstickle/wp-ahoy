@@ -22,7 +22,7 @@ require 'lib/ahoy/Event.php';
 // enqueue javascript
 //
 add_action('wp_enqueue_scripts', function () {
-    $path = plugin_dir_url(__FILE__) . 'vendor/assets/javascripts/ahoy.js';
+    $path = plugin_dir_url(__FILE__) . 'assets/js/ahoy.js';
     wp_enqueue_script('ahoy', $path, [], null, ['strategy' => 'defer']);
 }, 100);
 
