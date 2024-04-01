@@ -1,5 +1,5 @@
 /*!
- * Ahoy.js v0.4.3
+ * Ahoy.js v0.4.4
  * Simple, powerful JavaScript analytics
  * https://github.com/ankane/ahoy.js
  * MIT License
@@ -210,14 +210,10 @@
 
   function csrfToken() {
     return document.querySelector('html head meta[name=ahoy]').content;
-    var meta = document.querySelector("meta[name=csrf-token]");
-    return meta && meta.content;
   }
 
   function csrfParam() {
     return '_wpnonce';
-    var meta = document.querySelector("meta[name=csrf-param]");
-    return meta && meta.content;
   }
 
   function CSRFProtection(xhr) {
