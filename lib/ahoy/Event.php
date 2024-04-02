@@ -27,11 +27,6 @@ class Event
         $this->time = $time;
     }
 
-    public function getTime(): float
-    {
-        return $this->time;
-    }
-
     public function save(): int|bool
     {
         global $wpdb;

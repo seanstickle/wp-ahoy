@@ -52,7 +52,7 @@ class Tracker
 
         $event = new Event($data);
         $event->setVisit($visit);
-        $event->setTime(max($visit->started_at, $event->getTime()));
+        $event->setTime(max($visit->started_at, $data['time']));
         $event->save();
         return true;
     }
