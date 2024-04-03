@@ -4,8 +4,10 @@
  *
  * Plugin Name: Ahoy
  * Description: Simple, powerful, first-party analytics for WordPress
- * Version: 0.1
- * Author: Sean Stickle <sean@stickle.net>
+ * Version: 1.0
+ * Author: Sean Stickle <sean@stickle.net>, Andrew Kane <andrew@ankane.org>
+ *
+ * Based on the original Ahoy for Rails: https://github.com/ankane/ahoy
  *
  **/
 
