@@ -78,8 +78,8 @@ class VisitProperties
         $properties = [
             'ip'            => $this->ip,
             'user_agent'    => $this->user_agent,
-            'referrer'      => $this->referrer,
-            'landing_page'  => $this->landing_page,
+            'referrer'      => esc_url_raw($this->referrer),
+            'landing_page'  => esc_url_raw($this->landing_page),
         ];
 
         $properties['user_agent'] = $this->ensureUtf8($properties['user_agent']);
