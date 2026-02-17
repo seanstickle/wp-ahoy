@@ -56,9 +56,24 @@ class Ahoy_Event_Controller extends WP_REST_Controller
         $params = $request->get_params();
         $eventsJson = $params['events_json'];
         $props = json_decode($eventsJson, true)[0];
-        $event = $ahoy->track($props['name'], $props['properties'], ['time' => $props['time']]);
+        $name = sanitize_text_field($props['name']);
+        $properties = $this->sanitize_recursive($props['properties']);
+        $time = isset($props['time']) ? floatval($props['time']) : null;
+        $event = $ahoy->track($name, $properties, ['time' => $time]);
         return $event
             ? new WP_REST_Response(null, 200)
             : new WP_REST_Response(null, 500);
+    }
+
+    private function sanitize_recursive($data)
+    {
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = $this->sanitize_recursive($value);
+            }
+        } else {
+            $data = sanitize_text_field($data);
+        }
+        return $data;
     }
 }

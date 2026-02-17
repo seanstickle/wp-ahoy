@@ -47,7 +47,8 @@ class VisitProperties
         ];
 
         foreach ($utm as $key) {
-            $properties[$key] = $this->request[$key] ?? $landing_params[$key] ?? null;
+            $value = $this->request[$key] ?? $landing_params[$key] ?? null;
+            $properties[$key] = $value ? sanitize_text_field($value) : null;
         }
 
         return $properties;
@@ -76,10 +77,10 @@ class VisitProperties
     private function getRequestProperties(): array
     {
         $properties = [
-            'ip'            => $this->ip,
-            'user_agent'    => $this->user_agent,
-            'referrer'      => $this->referrer,
-            'landing_page'  => $this->landing_page,
+            'ip'            => sanitize_text_field($this->ip),
+            'user_agent'    => sanitize_text_field($this->user_agent),
+            'referrer'      => esc_url_raw($this->referrer),
+            'landing_page'  => esc_url_raw($this->landing_page),
         ];
 
         $properties['user_agent'] = $this->ensureUtf8($properties['user_agent']);
